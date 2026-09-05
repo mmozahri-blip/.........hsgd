@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ثبت ساعت کار</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16202B">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root{
+    --bg: #16202B;
+    --surface: #1E2B38;
+    --surface-2: #253747;
+    --line: #33465A;
+    --text: #EDF1F5;
+    --text-dim: #8FA0B3;
+    --amber: #E8A33D;
+    --green: #4FAE7C;
+    --red: #DD6B5A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Tahoma, "Segoe UI", system-ui, Arial, sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:32px 16px;
+  }
+  .wrap{width:100%;max-width:480px;}
+  .brand{text-align:center;margin-bottom:28px;}
+  .brand h1{font-size:21px;font-weight:600;margin:0 0 4px;letter-spacing:0.2px;}
+  .brand p{font-size:13px;color:var(--text-dim);margin:0;}
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px;
+    margin-bottom:16px;
+  }
+  .clock-face{text-align:center;}
+  .clock-status{font-size:13px;color:var(--text-dim);margin-bottom:6px;}
+  .clock-time{
+    font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;
+    letter-spacing:1px;margin-bottom:18px;
+  }
+  .clock-time.idle{color:var(--text-dim);}
+  .clock-time.active{color:var(--amber);}
+  button{font-family:inherit;cursor:pointer;border:none;}
+  .btn-main{
+    width:100%;padding:16px;border-radius:12px;font-size:16px;font-weight:600;
+    transition:transform .1s ease;
+  }
+  .btn-main:active{transform:scale(0.98);}
+  .btn-main.start{background:var(--amber);color:#2A1D08;}
+  .btn-main.stop{background:var(--red);color:#3A130C;}
+  .btn-main .sub{display:block;font-size:12px;font-weight:400;opacity:0.75;margin-top:3px;}
+  .last-session{font-size:13px;color:var(--text-dim);margin:14px 0 0;min-height:18px;}
+  .last-session .val{color:var(--text);font-weight:500;font-variant-numeric:tabular-nums;}
+  .section-title{font-size:13px;color:var(--text-dim);margin:0 0 12px;font-weight:500;}
+  .field-label{font-size:12px;color:var(--text-dim);margin:0 0 6px;}
+  .picker-row{display:flex;gap:8px;margin-bottom:14px;}
+  .picker-row select{
+    flex:1;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--text);
+    padding:9px 6px;
+    font-family:inherit;
+    font-size:14px;
+    font-variant-numeric:tabular-nums;
+    text-align:center;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+  .picker-row select:focus{outline:none;border-color:var(--amber);}
+  .time-num-row{align-items:center;}
+  input.time-num{
+    flex:1;
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--text);
+    padding:9px 6px;
+    font-family:inherit;
+    font-size:16px;
+    font-variant-numeric:tabular-nums;
+    text-align:center;
+  }
+  input.time-num:focus{outline:none;border-color:var(--amber);}
+  input.time-num::-webkit-outer-spin-button,
+  input.time-num::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  input.time-num[type=number]{-moz-appearance:textfield;}
+  .time-sep{color:var(--text-dim);font-weight:600;font-size:16px;}
+  .time-block{display:flex;gap:14px;margin-bottom:14px;}
+  .time-block .field{flex:1;}
+  .time-block .field-label{text-align:center;}
+  .time-block .picker-row{margin-bottom:0;}
+  .btn-add{
+    width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);
+    padding:11px;border-radius:8px;font-size:14px;font-weight:500;
+  }
+  .btn-add:hover{border-color:var(--amber);}
+  .error-msg{font-size:12px;color:var(--red);margin:8px 0 0;display:none;}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+  .stat-box{background:var(--surface-2);border-radius:10px;padding:14px;}
+  .stat-box .label{font-size:12px;color:var(--text-dim);margin-bottom:6px;}
+  .stat-box .value{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .stat-box .value.amber{color:var(--amber);}
+  .day-list{margin-top:16px;}
+  .day-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line);}
+  .day-row:first-child{border-top:none;}
+  .day-row .d-name{font-size:14px;}
+  .day-row .bar-wrap{flex:1;margin:0 14px;height:6px;background:var(--line);border-radius:3px;overflow:hidden;}
+  .day-row .bar{height:100%;background:var(--amber);border-radius:3px;}
+  .day-row .d-hours{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;min-width:52px;text-align:left;}
+  .empty{text-align:center;color:var(--text-dim);font-size:13px;padding:20px 0;}
+  .entries{margin-top:14px;}
+  .entry-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:13px;}
+  .entry-row:first-child{border-top:none;}
+  .entry-row .e-info{color:var(--text-dim);}
+  .entry-row .e-hours{font-weight:600;font-variant-numeric:tabular-nums;}
+  .entry-row .e-del{background:none;color:var(--red);font-size:12px;padding:4px 8px;border-radius:6px;}
+  .entry-row .e-del:hover{background:var(--surface-2);}
+  .toggle-entries{background:none;color:var(--text-dim);font-size:12px;padding:8px 0 0;width:100%;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <h1>ثبت ساعت کار</h1>
+    <p>ورود، خروج و مدیریت ساعت‌های کاری روزانه</p>
+  </div>
+
+  <div class="card clock-face">
+    <div class="clock-status" id="clockStatus">در حال حاضر ثبت نشده</div>
+    <div class="clock-time idle" id="clockTime">۰۰:۰۰:۰۰</div>
+    <button class="btn-main start" id="clockBtn">
+      ورود به کار
+      <span class="sub" id="clockBtnSub">با کلیک، زمان شروع ثبت می‌شود</span>
+    </button>
+    <p class="last-session" id="lastSession"></p>
+  </div>
+
+  <div class="card">
+    <p class="section-title">ثبت دستی ساعت (تقویم شمسی، قالب ۲۴ ساعته)</p>
+
+    <p class="field-label">تاریخ</p>
+    <div class="picker-row">
+      <select id="mDay"></select>
+      <select id="mMonth"></select>
+      <select id="mYear"></select>
+    </div>
+
+    <div class="time-block">
+      <div class="field">
+        <p class="field-label">ساعت شروع</p>
+        <div class="picker-row time-num-row">
+          <input type="number" id="mStartH" class="time-num" min="0" max="23" placeholder="ساعت" inputmode="numeric">
+          <span class="time-sep">:</span>
+          <input type="number" id="mStartM" class="time-num" min="0" max="59" placeholder="دقیقه" inputmode="numeric">
+        </div>
+      </div>
+      <div class="field">
+        <p class="field-label">ساعت پایان</p>
+        <div class="picker-row time-num-row">
+          <input type="number" id="mEndH" class="time-num" min="0" max="23" placeholder="ساعت" inputmode="numeric">
+          <span class="time-sep">:</span>
+          <input type="number" id="mEndM" class="time-num" min="0" max="59" placeholder="دقیقه" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-add" id="mAddBtn">افزودن به سوابق</button>
+    <p class="error-msg" id="mError"></p>
+  </div>
+
+  <div class="card">
+    <p class="section-title">امروز</p>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="label">ساعت کار امروز</div>
+        <div class="value amber" id="todayHours">۰ ساعت</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">مجموع کل</div>
+        <div class="value" id="weekHours">۰ ساعت</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="section-title">همه روزها</p>
+    <div class="day-list" id="dayList"></div>
+  </div>
+
+  <div class="card">
+    <p class="section-title">سوابق ثبت‌شده</p>
+    <div class="entries" id="entryList"></div>
+    <button class="toggle-entries" id="toggleEntries" style="display:none;"></button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'work-entries';
+const ACTIVE_KEY = 'active-session';
+let entries = [];
+let activeStart = null;
+let showAllEntries = false;
+let tickInterval = null;
+
+const faDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+function toFa(n){ return String(n).replace(/[0-9]/g, d => faDigits[d]); }
+function pad(n){ return String(n).padStart(2,'0'); }
+
+/* ---------- Jalali (Iranian) calendar conversion ---------- */
+function div(a,b){ return Math.floor(a/b); }
+
+function j2d(jy, jm, jd){
+  jy += 1595;
+  let days = -355668 + (365 * jy) + (div(jy, 33) * 8) + div((jy % 33) + 3, 4) + jd
+      + (jm < 7 ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
+  return days;
+}
+function d2g(jdn){
+  let gy = 400 * div(jdn, 146097);
+  jdn %= 146097;
+  let leap = true;
+  if (jdn >= 36525) {
+    jdn--;
+    gy += 100 * div(jdn, 36524);
+    jdn %= 36524;
+    if (jdn >= 365) jdn++; else leap = false;
+  }
+  gy += 4 * div(jdn, 1461);
+  jdn %= 1461;
+  if (jdn >= 366) { leap = false; jdn--; gy += div(jdn, 365); jdn %= 365; }
+  let gd = jdn + 1;
+  const sal_a = [0, 31, (leap ? 29 : 28), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let gm;
+  for (gm = 1; gm <= 12 && gd > sal_a[gm]; gm++) gd -= sal_a[gm];
+  return [gy, gm, gd];
+}
+function jalaliToGregorian(jy, jm, jd){ return d2g(j2d(jy, jm, jd)); }
+
+function nowruzUTC(jy){
+  const [ny, nm, nd] = jalaliToGregorian(jy, 1, 1);
+  return Date.UTC(ny, nm-1, nd);
+}
+function gregorianToJalali(gy, gm, gd){
+  const target = Date.UTC(gy, gm-1, gd);
+  let jy = gy - 622;
+  let nowruz = nowruzUTC(jy);
+  if(target < nowruz){
+    jy -= 1;
+    nowruz = nowruzUTC(jy);
+  }else{
+    const nextNowruz = nowruzUTC(jy+1);
+    if(target >= nextNowruz){ jy += 1; nowruz = nextNowruz; }
+  }
+  const diffDays = Math.round((target - nowruz) / 86400000);
+  let remaining = diffDays;
+  let jm = 1;
+  while(true){
+    const len = jm <= 6 ? 31 : 30;
+    if(remaining < len) break;
+    remaining -= len;
+    jm++;
+  }
+  return [jy, jm, remaining + 1];
+}
+
+const jalaliMonths = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const weekdayNames = ['یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه','شنبه'];
+
+function todayJalali(){
+  const now = new Date();
+  return gregorianToJalali(now.getFullYear(), now.getMonth()+1, now.getDate());
+}
+
+function isJalaliLeapYear(jy){
+  // Determine by checking if esfand (month 12) has 30 days: convert (jy,12,30) to gregorian then back
+  const [gy, gm, gd] = jalaliToGregorian(jy, 12, 30);
+  const back = gregorianToJalali(gy, gm, gd);
+  return back[1] === 12 && back[2] === 30;
+}
+function daysInJalaliMonth(jy, jm){
+  if(jm <= 6) return 31;
+  if(jm <= 11) return 30;
+  return isJalaliLeapYear(jy) ? 30 : 29;
+}
+
+/* ---------- date helpers ---------- */
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+function dateStrFromTs(ts){
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+function faDate(dateStr){
+  const [gy, gm, gd] = dateStr.split('-').map(Number);
+  const dt = new Date(gy, gm-1, gd);
+  const weekday = weekdayNames[dt.getDay()];
+  const [jy, jm, jd] = gregorianToJalali(gy, gm, gd);
+  return weekday + '، ' + toFa(jd) + ' ' + jalaliMonths[jm-1];
+}
+function fmtHours(h){
+  const totalMinutes = Math.round(h * 60);
+  const hh = Math.floor(totalMinutes / 60);
+  const mm = totalMinutes % 60;
+  return toFa(hh) + ':' + toFa(pad(mm));
+}
+function fmtTime24(hStr, mStr){ return toFa(hStr) + ':' + toFa(mStr); }
+
+/* ---------- storage (device localStorage, persists on this phone/browser) ---------- */
+function loadData(){
+  try{ entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }catch(e){ entries = []; }
+  try{
+    const raw = localStorage.getItem(ACTIVE_KEY);
+    activeStart = raw ? JSON.parse(raw).start : null;
+  }catch(e){ activeStart = null; }
+}
+function saveEntries(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+  catch(e){ console.error('storage error', e); }
+}
+function saveActive(){
+  try{
+    if(activeStart){ localStorage.setItem(ACTIVE_KEY, JSON.stringify({start:activeStart})); }
+    else{ localStorage.removeItem(ACTIVE_KEY); }
+  }catch(e){ console.error('storage error', e); }
+}
+
+function computeStatsFor(dateStr){
+  return entries.filter(e => e.date === dateStr).reduce((s,e) => s + e.hours, 0);
+}
+
+/* ---------- picker population ---------- */
+function fillSelect(sel, count, startAt, formatter){
+  sel.innerHTML = '';
+  for(let i=0;i<count;i++){
+    const val = startAt + i;
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = formatter ? formatter(val) : toFa(pad(val));
+    sel.appendChild(opt);
+  }
+}
+
+function initPickers(){
+  const [jy, jm, jd] = todayJalali();
+
+  fillSelect(document.getElementById('mYear'), 6, jy-4, v => toFa(v));
+  fillSelect(document.getElementById('mMonth'), 12, 1, v => jalaliMonths[v-1]);
+  refreshDayOptions();
+  document.getElementById('mYear').value = jy;
+  document.getElementById('mMonth').value = jm;
+  refreshDayOptions();
+  document.getElementById('mDay').value = jd;
+
+  document.getElementById('mYear').addEventListener('change', refreshDayOptions);
+  document.getElementById('mMonth').addEventListener('change', refreshDayOptions);
+}
+function refreshDayOptions(){
+  const y = Number(document.getElementById('mYear').value);
+  const m = Number(document.getElementById('mMonth').value);
+  const daySel = document.getElementById('mDay');
+  const prev = daySel.value;
+  const maxDay = daysInJalaliMonth(y, m);
+  fillSelect(daySel, maxDay, 1);
+  if(prev && Number(prev) <= maxDay) daySel.value = prev;
+}
+
+/* ---------- rendering ---------- */
+function renderClock(){
+  const btn = document.getElementById('clockBtn');
+  const status = document.getElementById('clockStatus');
+  const time = document.getElementById('clockTime');
+
+  if(activeStart){
+    btn.className = 'btn-main stop';
+    btn.innerHTML = 'خروج از کار<span class="sub" id="clockBtnSub">با کلیک، زمان پایان ثبت می‌شود</span>';
+    const startDt = new Date(activeStart);
+    status.textContent = 'از ساعت ' + toFa(pad(startDt.getHours())) + ':' + toFa(pad(startDt.getMinutes())) + ' مشغول کار هستید';
+    time.className = 'clock-time active';
+    updateElapsed();
+    if(!tickInterval) tickInterval = setInterval(updateElapsed, 1000);
+  }else{
+    if(tickInterval){ clearInterval(tickInterval); tickInterval = null; }
+    btn.className = 'btn-main start';
+    btn.innerHTML = 'ورود به کار<span class="sub" id="clockBtnSub">با کلیک، زمان شروع ثبت می‌شود</span>';
+    status.textContent = 'در حال حاضر ثبت نشده';
+    time.className = 'clock-time idle';
+    time.textContent = '۰۰:۰۰:۰۰';
+  }
+}
+function updateElapsed(){
+  if(!activeStart) return;
+  const diff = Math.max(0, Date.now() - activeStart);
+  const h = Math.floor(diff/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const s = Math.floor((diff%60000)/1000);
+  document.getElementById('clockTime').textContent = toFa(pad(h)) + ':' + toFa(pad(m)) + ':' + toFa(pad(s));
+}
+function renderLastSession(){
+  const el = document.getElementById('lastSession');
+  if(activeStart){
+    const t = new Date(activeStart);
+    el.innerHTML = 'ورود: <span class="val">' + fmtTime24(pad(t.getHours()), pad(t.getMinutes())) + '</span>';
+    return;
+  }
+  const sorted = [...entries].sort((a,b) => b.date.localeCompare(a.date) || (b.end||'').localeCompare(a.end||''));
+  if(sorted.length === 0){ el.textContent = ''; return; }
+  const last = sorted[0];
+  if(last.start && last.end){
+    el.innerHTML = 'ورود: <span class="val">' + toFa(last.start) + '</span> · خروج: <span class="val">' + toFa(last.end) + '</span>';
+  }else{ el.textContent = ''; }
+}
+function renderStats(){
+  const today = todayStr();
+  document.getElementById('todayHours').textContent = fmtHours(computeStatsFor(today));
+
+  const totals = {};
+  entries.forEach(e => { totals[e.date] = (totals[e.date] || 0) + e.hours; });
+  const dateKeys = Object.keys(totals).sort((a,b) => b.localeCompare(a));
+  const days = dateKeys.map(ds => ({date: ds, hours: totals[ds]}));
+
+  const grandTotal = entries.reduce((s,e) => s + e.hours, 0);
+  document.getElementById('weekHours').textContent = fmtHours(grandTotal);
+
+  const maxH = Math.max(1, ...days.map(d => d.hours));
+  const list = document.getElementById('dayList');
+  if(days.length === 0){
+    list.innerHTML = '<p class="empty">هنوز ساعتی ثبت نشده است</p>';
+  }else{
+    list.innerHTML = days.map(d => `
+      <div class="day-row">
+        <span class="d-name">${faDate(d.date)}</span>
+        <div class="bar-wrap"><div class="bar" style="width:${(d.hours/maxH*100).toFixed(0)}%"></div></div>
+        <span class="d-hours">${d.hours>0 ? fmtHours(d.hours) : '—'}</span>
+      </div>
+    `).join('');
+  }
+}
+function renderEntries(){
+  const sorted = [...entries].sort((a,b) => b.date.localeCompare(a.date) || (b.start||'').localeCompare(a.start||''));
+  const visible = showAllEntries ? sorted : sorted.slice(0,5);
+  const list = document.getElementById('entryList');
+  const toggle = document.getElementById('toggleEntries');
+
+  if(sorted.length === 0){
+    list.innerHTML = '<p class="empty">هنوز سابقه‌ای ثبت نشده است</p>';
+    toggle.style.display = 'none';
+  }else{
+    list.innerHTML = visible.map(e => `
+      <div class="entry-row">
+        <span class="e-info">${faDate(e.date)}${e.start ? ' · ' + toFa(e.start) + (e.end ? '–' + toFa(e.end) : '') : ''}</span>
+        <span class="e-hours">${fmtHours(e.hours)}</span>
+        <button class="e-del" data-id="${e.id}">حذف</button>
+      </div>
+    `).join('');
+    if(sorted.length > 5){
+      toggle.style.display = 'block';
+      toggle.textContent = showAllEntries ? 'نمایش کمتر' : `نمایش همه (${toFa(sorted.length)})`;
+    }else{
+      toggle.style.display = 'none';
+    }
+    list.querySelectorAll('.e-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        entries = entries.filter(e => e.id !== id);
+        saveEntries();
+        renderAll();
+      });
+    });
+  }
+}
+function renderAll(){
+  renderClock();
+  renderLastSession();
+  renderStats();
+  renderEntries();
+}
+
+/* ---------- events ---------- */
+document.getElementById('clockBtn').addEventListener('click', () => {
+  if(activeStart){
+    const end = Date.now();
+    const hours = (end - activeStart) / 3600000;
+    if(hours > 0){
+      entries.push({
+        id: 'e' + Date.now(),
+        date: dateStrFromTs(activeStart),
+        start: pad(new Date(activeStart).getHours()) + ':' + pad(new Date(activeStart).getMinutes()),
+        end: pad(new Date(end).getHours()) + ':' + pad(new Date(end).getMinutes()),
+        hours: Math.round(hours*100)/100
+      });
+      saveEntries();
+    }
+    activeStart = null;
+    saveActive();
+  }else{
+    activeStart = Date.now();
+    saveActive();
+  }
+  renderAll();
+});
+
+document.getElementById('toggleEntries').addEventListener('click', () => {
+  showAllEntries = !showAllEntries;
+  renderEntries();
+});
+
+document.getElementById('mAddBtn').addEventListener('click', () => {
+  const errEl = document.getElementById('mError');
+  errEl.style.display = 'none';
+
+  const jy = Number(document.getElementById('mYear').value);
+  const jm = Number(document.getElementById('mMonth').value);
+  const jd = Number(document.getElementById('mDay').value);
+  const sh = document.getElementById('mStartH').value;
+  const sm = document.getElementById('mStartM').value;
+  const eh = document.getElementById('mEndH').value;
+  const em = document.getElementById('mEndM').value;
+
+  if(sh === '' || sm === '' || eh === '' || em === ''){
+    errEl.textContent = 'لطفاً ساعت و دقیقه شروع و پایان را وارد کنید.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const shN = Number(sh), smN = Number(sm), ehN = Number(eh), emN = Number(em);
+  if([shN,ehN].some(v => v<0 || v>23) || [smN,emN].some(v => v<0 || v>59)){
+    errEl.textContent = 'ساعت باید بین ۰ تا ۲۳ و دقیقه بین ۰ تا ۵۹ باشد.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  let hours = (ehN*60+emN - (shN*60+smN)) / 60;
+  if(hours <= 0){
+    errEl.textContent = 'ساعت پایان باید بعد از ساعت شروع باشد.';
+    errEl.style.display = 'block';
+    return;
+  }
+  const [gy, gm, gd] = jalaliToGregorian(jy, jm, jd);
+  const date = gy + '-' + pad(gm) + '-' + pad(gd);
+
+  entries.push({
+    id: 'e' + Date.now(),
+    date,
+    start: pad(shN) + ':' + pad(smN),
+    end: pad(ehN) + ':' + pad(emN),
+    hours: Math.round(hours*100)/100
+  });
+  saveEntries();
+  document.getElementById('mStartH').value = '';
+  document.getElementById('mStartM').value = '';
+  document.getElementById('mEndH').value = '';
+  document.getElementById('mEndM').value = '';
+  renderAll();
+});
+
+/* ---------- init ---------- */
+loadData();
+initPickers();
+renderAll();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
