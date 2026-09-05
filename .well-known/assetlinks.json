@@ -1,1 +1,8 @@
-
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.mmozahri_blip.twa",
+        "sha256_cert_fingerprints": ["62:7A:E7:AA:C0:9A:FF:CC:30:A6:C7:96:9A:9C:56:86:EA:70:09:5F:63:6F:6D:51:EB:A3:B6:B9:D1:42:AD:3B"]
+      }
+    }]
